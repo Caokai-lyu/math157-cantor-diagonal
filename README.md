@@ -1,65 +1,99 @@
-# Cantor's Diagonal Argument — Math 157 Final Project
+# Cantor Diagonal Argument in Lean 4
 
-A Lean 4 formalization of Cantor's diagonal argument for infinite binary
-sequences.
+## Project Overview
 
-## What This Project Proves
+This project formalizes the core idea of Cantor's diagonal argument for infinite
+binary sequences in Lean 4. An infinite binary sequence is represented as a
+function from natural numbers to Boolean values:
 
-The main theorem is that no function `f : Nat -> (Nat -> Bool)` can list every
-infinite binary sequence.
+```lean
+Nat -> Bool
+```
 
-In this project, an infinite binary sequence is represented as a function
-`Nat -> Bool`.  A proposed list of all such sequences is represented as a
-function `f : Nat -> (Nat -> Bool)`, where `f n` is the `n`-th sequence in the
-list.
+A proposed list of all such sequences is represented as a function assigning one
+binary sequence to each natural number:
 
-Given any attempted list `f`, we construct a new sequence `diag f` that is
-guaranteed to differ from every entry in the list.  Therefore the proposed list
-is always incomplete.
+```lean
+Nat -> (Nat -> Bool)
+```
 
-## How the Formal Proof Corresponds to the Informal Argument
+The main construction is the diagonal sequence. Given a proposed list `f`, the
+diagonal sequence `diag f` is defined so that its `n`th value is the opposite of
+the `n`th value of the `n`th sequence in the list:
 
-| Informal step | Lean name | What it says |
-|---|---|---|
-| Define the diagonal sequence by flipping the `n`-th bit of the `n`-th sequence. | `diag` | `diag f n := !(f n n)` |
-| A bit is never equal to its own flip. | `bool_ne_not` | `b ≠ !b` for any `Bool` value `b` |
-| The diagonal sequence differs from `f n` at position `n`. | `diag_pointwise_ne` | `diag f n ≠ (f n) n` |
-| If two sequences differ at one position, they are different sequences. | `fun_ne_of_pointwise_ne` | `g n ≠ h n -> g ≠ h` |
-| Therefore `diag f` is not equal to any `f n`. | `cantor_bool_diagonal` | `diag f ≠ f n` for all `n` |
+```lean
+def diag (f : Nat -> (Nat -> Bool)) : Nat -> Bool :=
+  fun n => Bool.not ((f n) n)
+```
+
+Because `diag f` differs from each listed sequence `f n` at position `n`, it
+cannot be equal to any sequence in the proposed list. Therefore, no function
+
+```lean
+Nat -> (Nat -> Bool)
+```
+
+can list all infinite binary sequences.
+
+## Main Result
+
+The main theorem is:
+
+```lean
+theorem cantor_bool_diagonal :
+    ∀ f : Nat -> (Nat -> Bool), ∃ g : Nat -> Bool, ∀ n : Nat, g ≠ f n
+```
+
+This states that for any attempted enumeration `f` of infinite binary sequences,
+there exists a binary sequence `g` that is not equal to any sequence in the list.
+
+The project also proves the equivalent surjectivity form:
+
+```lean
+theorem cantor_bool_not_surjective (f : Nat -> (Nat -> Bool)) :
+    ¬ Function.Surjective f
+```
+
+This states that no attempted list `f` is surjective onto the type of infinite
+binary sequences.
 
 ## File Structure
 
-```text
-CantorDiagonal.lean    -- all definitions, lemmas, and theorems
-README.md              -- project explanation
-```
+The Lean file is organized into the following sections:
 
-## How to Check the Lean File
+1. Definition of the diagonal sequence.
+2. Proof that a Boolean value is never equal to its negation.
+3. Proof that the diagonal sequence differs from each listed sequence at the
+   diagonal position.
+4. A helper theorem showing that pointwise difference implies function
+   inequality.
+5. The main diagonal argument and non-surjectivity theorem.
+6. A small concrete example list with computational checks.
+7. Optional axiom audit commands.
 
-This project uses Lean 4 core only.  It does not require Mathlib or any
-nonstandard dependencies.
+## Requirements
 
-To check the file directly, run:
+This project uses only Lean 4 core functionality and does not require Mathlib.
+There are no uses of `sorry`.
+
+## How to Run
+
+From the directory containing the Lean file, run:
 
 ```bash
 lean CantorDiagonal.lean
 ```
 
-The file should compile successfully with no `sorry`.
+The file should compile successfully and print the expected results from the
+`#eval` sanity checks.
 
-## Axiom Audit
+## Mathematical Meaning
 
-The Lean file includes commented-out `#print axioms` commands near the bottom.
-These can be uncommented to inspect which foundational axioms Lean reports for
-the main theorems.
+The proof follows Cantor's classical diagonal method. If someone claims to have
+listed every infinite binary sequence, we construct a new sequence by flipping
+the diagonal entries of that list. This new sequence differs from the first
+listed sequence at position `0`, from the second listed sequence at position
+`1`, from the third listed sequence at position `2`, and so on. Hence it is not
+on the list, contradicting the claim that the list contains every sequence.
 
-No additional axioms are introduced in this file, and no `sorry` placeholders
-are used.
-
-## Reflection
-
-My goal for this project was to practice translating a familiar informal proof
-into a precise formal proof that Lean can check.  One important lesson was that
-Lean requires even small logical steps to be stated explicitly.  For example,
-the informal step "these two sequences differ at position `n`, so they are not
-the same sequence" was written as a separate theorem in Lean.
+Thus, the type of infinite binary sequences is not countable.
